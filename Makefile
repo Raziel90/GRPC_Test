@@ -38,10 +38,10 @@ vpath %.proto $(PROTOS_PATH)
 
 all: system-check data_transfer_client data_transfer_server
 
-data_transfer_client: data_specification.pb.o data_specification.grpc.pb.o data_specification.o helper.o
+data_transfer_client: data_specification.pb.o data_specification.grpc.pb.o data_client.o 
 	$(CXX) $^ $(LDFLAGS) -o $@
 
-data_transfer_server: data_specification.pb.o data_specification.grpc.pb.o data_specification.o helper.o
+data_transfer_server: data_specification.pb.o data_specification.grpc.pb.o data_server.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
 %.grpc.pb.cc: %.proto

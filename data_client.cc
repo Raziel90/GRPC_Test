@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <memory>
 #include <string>
 
@@ -9,12 +10,16 @@
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
-
+using grpc::ClientWriterInterface;
 
 using data_transfer::Data_msg_req;
 using data_transfer::Data_msg_res;
 using data_transfer::Data_Send;
 
+using data_transfer::BigFileChunk;
+using data_transfer::BigFileAck;
+
+using std::ifstream;
 
 class Data_Transfer_Client
 {
@@ -46,6 +51,19 @@ public:
 			return "RPC Failed!";
 		}
 	}
+	BigFileAck UploadFile(const std::string filename)
+	{
+
+		BigFileChunk chunk;
+
+
+		//Response container
+		BigFileAck ack;
+
+		return ack;
+	}
+
+
 
 private:
 	std::unique_ptr<Data_Send::Stub> stub_;
@@ -93,7 +111,7 @@ int main(int argc, char const *argv[])
 		"0.0.0.0:50051",grpc::InsecureChannelCredentials()));
 
 	std::string result;
-	result = client.send_data(1,"Hello world!");
+	result = client.send_data(num_value,str_value);
 	std::cout << result<<std::endl;
 	return 0;
 }
