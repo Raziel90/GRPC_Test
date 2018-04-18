@@ -14,7 +14,7 @@ filename="$(basename $filepath)"
 
 cp -rf $filepath client_folder/ 
 
-echo $filename
+echo "FILE TO SEND: "$filename
 #echo "Generate Large File..."
 #dd if=/dev/zero of=./client_folder/file.txt count=101024 bs=1024 #Generates a big file to send
 echo "----------------------START SERVER!------------------------------"
@@ -25,7 +25,7 @@ cd ..
 
 echo "----------------------START CLIENT!------------------------------"
 cd client_folder
-../data_transfer_client -num 100 -str "hola amigo" -file ./$filename 
+../data_transfer_client -num 100 -str "hola amigo" -tfile ./$filename 
 cd ..
 
 echo ""

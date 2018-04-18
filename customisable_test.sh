@@ -14,8 +14,8 @@ num=$1
 string=$2
 filepath=$3
 filename="$(basename $filepath)"  # Returns just "to"
-
-cp -rf $filepath client_folder/ 
+filedir="$(dirname $filepath)"
+cp -f $filepath ./client_folder/ 
 
 echo "FILE TO SEND: "$filename
 #echo "Generate Large File..."
@@ -28,7 +28,8 @@ cd ..
 
 echo "----------------------START CLIENT!------------------------------"
 cd client_folder
-../data_transfer_client -num $num -str $str -file ./$filename 
+../data_transfer_client -num "$num" -str "$str" -tfile ./$filename
+#../data_transfer_client -num 100 -str "hola_amigo" -tfile ./$filename  
 cd ..
 
 echo ""
@@ -53,5 +54,6 @@ echo ""
 
 echo "----------------------KILL SERVER------------------------------"
 killall data_transfer_server
-rm server_folder/$filename
+rm -r server_folder/
+rm -r client_folder/
 make clean

@@ -158,11 +158,12 @@ int main(int argc, char const *argv[])
 	// Check the number of parameters
     if (argc < 7|| ((argc-1)%2)==1) {
         // Tell the user how to run the program
-        std::cerr << "Usage: " << argv[0];
-        std::cerr << "options:"<< std::endl<<
-        			"\t  -str <str_msg>"<< std::endl<<
-        			"\t  -num <int_msg>"<<std::endl<<
-        			"\t  -file <filename>"<<std::endl;;
+        std::cout<<argv[5];
+        std::cerr << "Usage: of" << argv[0];
+        std::cerr << std::endl<< argv[0] <<
+        			"  -str <str_msg>"<<
+        			"  -num <int_msg>"<<
+        			"  -tfile <filename>" << std::endl;
         /* "Usage messages" are a conventional way of telling the user
          * how to run a program if they enter the command incorrectly.
          */
@@ -187,7 +188,7 @@ int main(int argc, char const *argv[])
     	}else if(arg=="-str")
     	{
     		str_value = argv[i+1];
-    	} else if (arg=="-file") 
+    	} else if (arg=="-tfile") 
     	{
     		filename = argv[i+1];
     	}
