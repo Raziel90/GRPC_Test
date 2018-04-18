@@ -4,6 +4,10 @@
 #include <string>
 #include <vector> 
 
+#include <thread>
+#include <random>
+#include <chrono>
+
 #include <grpcpp/grpcpp.h>
 
 #include "data_specification.grpc.pb.h"
@@ -46,10 +50,10 @@ public:
 
 		if (status.ok()) 
 		{
-			return response.status_name();
+			return "CLIENT: Sent  --> Num: "+std::to_string(response.status())+" string: "+response.status_name();
 		} else {
-			std::cerr<< status.error_code() << ": " << status.error_message() << std::endl;
-			return "RPC Failed!";
+			std::cerr<<"CLIENT: "<< status.error_code() << ": " << status.error_message() << std::endl;
+			return "CLIENT: RPC Failed!";
 		}
 	}
 
@@ -58,42 +62,49 @@ public:
 		const int Max_Chunk_size = 1024;//1826626; //1KB
 		ClientContext context;
 		
-		std::vector<char> buffer (Max_Chunk_size + 1, 0);
-
+		//std::vector<char> buffer (Max_Chunk_size + 1, 0);
 		
-		BigFileAck ack; //Response container
+		//std::string buffer;
+		char *buffer = new char[Max_Chunk_size + 1];
+		
+		
 		int read_bytes = 0;
 		int sent_chunks = 0;
 
-		std::cout<<"opening file: "<< filename<<" ..."<<std::endl;
+		//std::cout<<"opening file: "<< filename<<" ..."<<std::endl;
 		ifstream in_file(filename,std::ifstream::binary);
+		
+
+		unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+		std::default_random_engine generator(seed);
+		std::uniform_int_distribution<int> delay_distribution(
+        100, 200);
+		
 
 		if(!in_file)
 		{
-			std::cerr<<"File: "<<filename<<" Does Not Exist!"<<std::endl;
+			std::cerr<<"CLIENT: File: "<<filename<<" Does Not Exist!"<<std::endl;
 			return "File Transfer Failed!";
 
 		}
-		std::cout<<"opening Succeded! "<<std::endl;
+		//std::cout<<"opening Succeded! "<<std::endl;
 		in_file.seekg (0, in_file.end);
 		int file_length = in_file.tellg();
 		in_file.seekg (0, in_file.beg);
 
-		std::unique_ptr< ClientWriter<BigFileChunk> > writer(
-        	stub_->UploadFile(&context, &ack));
+		std::unique_ptr< ::grpc::ClientReaderWriter< ::data_transfer::BigFileChunk, ::data_transfer::BigFileAck>> writer(stub_->UploadFile(&context));
+		
 			
 		int bytes_to_read = std::min(Max_Chunk_size,(file_length-read_bytes));
 		
-		while(writer&&in_file.read(buffer.data(),bytes_to_read)&&bytes_to_read)
+		while(writer&&in_file.read(buffer,bytes_to_read)&&bytes_to_read)
 		{
-			
+			BigFileAck ack; //Response container
 			BigFileChunk chunk;
 			
-
-			//in_file.read(buffer.data(),bytes_to_read);
 			read_bytes += bytes_to_read;
 			
-			chunk.set_data(buffer.data());
+			chunk.set_data(buffer);
 			chunk.set_filename(filename);
 			chunk.set_chunknumber(sent_chunks++);
 			chunk.set_sizeinbytes(file_length);
@@ -105,24 +116,29 @@ public:
 			if (!writer->Write(chunk)) 
 			{
 				// Broken stream.
-				std::cerr<<"Broken Stream!"<<std::endl;
+				std::cerr<<"CLIENT: Broken Stream!"<<std::endl;
 				return "File Transfer Failed!";
 
 				break;
       		}
-			std::cout<<std::endl<<"<--------------------------------------------------------------->"<<std::endl;
-			std::cout<<"Chunk #"<<sent_chunks <<" Size: "<< bytes_to_read <<std::endl;
-			std::cout<<chunk.data().c_str()<<std::endl;
-			std::cout<<"Sent "<<read_bytes<<"/"<<file_length <<" Bytes!"<<std::endl<<std::endl;
+      		//std::this_thread::sleep_for(std::chrono::milliseconds(delay_distribution(generator)));
+
+			//std::cout<<std::endl<<"<--------------------------------------------------------------->"<<std::endl;
+			//std::cout<<"Chunk #"<<sent_chunks-1 <<" Size: "<< bytes_to_read <<std::endl;
+			//std::cout<<"Sent "<<read_bytes<<"/"<<file_length <<" Bytes!"<<std::endl<<std::endl;
 
 			bytes_to_read = std::min(Max_Chunk_size,(file_length-read_bytes));
-			system("read -p 'Press Enter to continue...' var");
+
+			writer->Read(&ack);
+			
+    		//std::cout<<"The server received "<<ack.sizeinbytes() <<" Bytes!"<<std::endl;	
+			//std::cout<<"Trasfer Status: "<<ack.status()<<std::endl;
+			if (ack.status()=="File Transfer Failed!") return ack.status();	
+			//system("read -p 'Press Enter to continue...' var");
 		}
 		in_file.close();
 		writer->WritesDone();
     	Status status = writer->Finish();
-    	std::cout<<"The server received "<<ack.sizeinbytes() <<" Bytes!"<<std::endl;	
-		std::cout<<"Trasfer Status: "<<ack.err()<<std::endl;
 	
 
 
@@ -140,7 +156,7 @@ int main(int argc, char const *argv[])
 {
 	
 	// Check the number of parameters
-    if (argc < 2|| ((argc-1)%2)==1) {
+    if (argc < 7|| ((argc-1)%2)==1) {
         // Tell the user how to run the program
         std::cerr << "Usage: " << argv[0];
         std::cerr << "options:"<< std::endl<<
@@ -186,9 +202,19 @@ int main(int argc, char const *argv[])
 	std::string result,transfer_result;
 
 	result = client.send_data(num_value,str_value);
-	transfer_result = client.UploadFile(filename);
-	//std::cout << result<<std::endl;
-	std::cout << transfer_result<<std::endl;
+	if (filename!="")
+	{
+		transfer_result = client.UploadFile(filename);
+	}
+	
+	std::cout <<"CLIENT: "<< result<<std::endl;
+	std::cout << "CLIENT: "<<transfer_result<<std::endl;
 
 	return 0;
 }
+
+
+
+
+
+

@@ -5,7 +5,7 @@ package data_transfer;
 
 service Data_Send {
 	rpc send_data (Data_msg_req) returns (Data_msg_res);
-	rpc UploadFile(stream BigFileChunk) returns (BigFileAck); 
+	rpc UploadFile(stream BigFileChunk) returns (stream BigFileAck); 
 }
 
 
@@ -35,40 +35,27 @@ message BigFileChunk {
     // len(Data) exactly.
     int64     SizeInBytes = 2;
 
-    // According to the sender's clock,
-    // when did this chunk get put
-    // on the wire?
-    fixed64   SendTime    = 3;
-    fixed64   OriginalStartSendTime    = 10;
+    int32 	  PayloadSize = 4;
 
-    // How big can Data be? I
-    // recommend no more than 1MB.
-    // I suggest 1MB chunking to be
-    // on the safe side. Above
-    // 2MB, I observe that gRPC
-    // starts to return EOF instead
-    // of conveying the messages.
-    // 
-    // Fields Data and Blake2B are
-    // for just a single chunk.
-    bytes     Data        = 6;
+   
+    bytes     Data        = 5;
 
     // gRPC guarantees in-order delivery
     // of the stream, so ChunkNumber may
     // seem unnecessary. It is still
     // useful for/as a delivery progress
     // meter.
-    int64     ChunkNumber      = 7;
+    int64     ChunkNumber      = 6;
 
     // Be sure to set IsLastChunk to true
     // if this is the last chunk.
-    bool      IsLastChunk = 8;
+    bool      IsLastChunk = 7;
 }
 
 message BigFileAck {
-    string    Filepath         = 1;
+    string    Filename         = 1;
     int64     SizeInBytes      = 2;
-    fixed64   RecvTime         = 3;
-    bytes     WholeFileBlake2B = 4;
-    string    Err              = 5;
+    int64	  ChunkNumber      = 3;
+    fixed64   RecvTime         = 4;
+    string    Status           = 5;
 }

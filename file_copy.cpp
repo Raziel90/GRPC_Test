@@ -5,7 +5,8 @@
 #include <vector> 
 
 
-
+template <typename T,unsigned S>
+inline unsigned arraysize(const T (&v)[S]) { return S; }
 
 int main(int argc, char const *argv[])
 {
@@ -31,6 +32,8 @@ int main(int argc, char const *argv[])
 
 	while(in_file.read(buffer.data(),byte_to_read)&&byte_to_read)
 	{	
+		//std::copy( noise.begin(), noise.end(), std::back_inserter(buffer_noised));
+
 		out_file.write(buffer.data(),byte_to_read);
 		loaded_byte += byte_to_read;
 		byte_to_read = std::min(buffer_size,file_length-loaded_byte);
@@ -42,3 +45,4 @@ int main(int argc, char const *argv[])
 
 	return 0;
 }
+
