@@ -57,24 +57,70 @@ Status send_data(ServerContext* context, const Data_msg_req* req, Data_msg_res* 
 
 Status UploadFile(ServerContext* context,ServerReader<BigFileChunk>* reader, BigFileAck* response) override 
 {
+
+	const int Max_Chunk_size = 1024;//1826626; //1KB
+
 	ofstream out_file;
 	BigFileChunk chunk_placeholder;
-	BigFileAck ack_placeholder;
 	system_clock::time_point start_time = system_clock::now();
+	
 	int chunk_counter = 0;
+	int loaded_bytes = 0;
+
+	std::cout<<"File Transfer Requested!"<<std::endl;
+
 	while(reader->Read(&chunk_placeholder))
 	{
 		
 		if (chunk_counter == 0)
 		{
-			out_file.open(chunk_placeholder.filename(),ios::binary);
+			//open File
+			std::cout<<"<...................................................................>"<<std::endl;
+			std::cout<<"Filename: "<< chunk_placeholder.filename() <<std::endl;
+			std::cout<<"Size: "<< chunk_placeholder.sizeinbytes() <<std::endl;
+
+			std::cout<<"<...................................................................>"<<std::endl;
+			out_file.open(chunk_placeholder.filename(),std::ofstream::binary|std::ofstream::trunc);
 		}
-		out_file << chunk_placeholder.data();
 		
+		int bytes_to_load=chunk_placeholder.payloadsize();
+		std::vector<char> buffer (Max_Chunk_size + 1, 0);
+
+		memcpy(buffer.data(),chunk_placeholder.data().c_str(),bytes_to_load);
+
+		
+		std::cout<<"Chunk #"<<chunk_placeholder.chunknumber()<<" Payload Size: "<<bytes_to_load<<std::endl;
+		//std::cout<<chunk_placeholder.data().data()<<std::endl;
+		out_file.write(buffer.data(),bytes_to_load);
 		chunk_counter++;
-		if (chunk_counter < chunk_placeholder.chunknumber()) return Status::CANCELLED;
+		loaded_bytes=loaded_bytes+bytes_to_load;
+
+		//std::cout<<"<--------------------------------------------------------------->"<<std::endl;
+		//std::cout<<"Chunk #"<<chunk_counter <<" Received!"<<std::endl;
+		
+		std::cout<<"Received "<<loaded_bytes<<"/"<<chunk_placeholder.sizeinbytes() <<" Bytes!"<<std::endl;
+		out_file.flush();
+		std::cout<<chunk_placeholder.data().c_str()<<std::endl;
+		//if(!chunk_placeholder.islastchunk()) out_file.close();//bytes_to_load = Max_Chunk_size ;
+		//else bytes_to_load = chunk_placeholder.sizeinbytes()%Max_Chunk_size;
+		//system("read -p 'Press Enter to continue...' var");
 	}
 	out_file.close();
+	response->set_filename(chunk_placeholder.filename());
+	response->set_sizeinbytes(loaded_bytes);
+	response->set_err("");
+
+
+	if (loaded_bytes < chunk_placeholder.sizeinbytes()) 
+	{
+		response->set_err("File Transfer Failed!");
+		return Status::CANCELLED;
+	}
+	
+	
+	
+
+
 	system_clock::time_point end_time = system_clock::now();
 	return Status::OK;
 }

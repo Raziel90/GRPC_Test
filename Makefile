@@ -44,6 +44,9 @@ data_transfer_client: data_specification.pb.o data_specification.grpc.pb.o data_
 data_transfer_server: data_specification.pb.o data_specification.grpc.pb.o data_server.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
+file_copy: file_copy.o
+	$(CXX) $^ $(LDFLAGS) -o $@
+
 %.grpc.pb.cc: %.proto
 	$(PROTOC) -I $(PROTOS_PATH) --grpc_out=. --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN_PATH) $<
 
